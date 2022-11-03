@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -10,6 +9,8 @@ const ethers = require('ethers');
 const lodash = require('lodash');
 dotenv.config();
 const PORT = process.env.PORT || 3000;
+const PUBLIC_PATH = process.env.PUBLIC_PATH || './dist';
+const STORAGE_ACCOUNTS = 'accounts';
 
 async function initServer() {
   const RSA = await initRsa();
@@ -22,9 +23,8 @@ async function initServer() {
   app.use(express.json())
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cors(corsOptions));
-  app.use(express.static(__dirname + '/dist')); //Serves resources from public folder
+  app.use(express.static(__dirname, PUBLIC_PATH)); //Serves resources from public folder
   
-
   // Routes
   app.get('/api', (_, res) => {
     res.json({
@@ -49,12 +49,7 @@ async function initServer() {
       nftId: nftId,
       updatedTime: Date.now(),
     };
-    storage.set(`accounts.${addr}`, account)
-    console.log({
-      acc: account,
-      decrypt: RSA.decrypt(account.identityEncrypted),
-    })
-  
+    storage.set(`${STORAGE_ACCOUNTS}.${addr}`, account)
     res.json({
       data: account,
     });
@@ -67,7 +62,7 @@ async function initServer() {
         error: 'Missing identityToken',
       });
     }
-    const account = lodash.find(storage.get('accounts'), (acc) => acc.identityToken === identityToken);
+    const account = lodash.find(storage.get(STORAGE_ACCOUNTS), (acc) => acc.identityToken === identityToken);
     if(!account) {
       return res.status(400).json({
         error: 'Invalid identityToken',
@@ -90,7 +85,7 @@ async function initServer() {
       });
     }
    
-    const account = lodash.find(storage.get('accounts'), (acc) => acc.nftId === nftId);
+    const account = lodash.find(storage.get(STORAGE_ACCOUNTS), (acc) => acc.nftId === nftId);
     if(!account) {
       return res.status(400).json({
         error: 'Invalid nftId',
